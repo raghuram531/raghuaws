@@ -1,0 +1,35 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: EC2 instance with functions
+Parameters:
+  KeyName:
+    Description: Key Pair name
+    Type: AWS::EC2::KeyPair::KeyName
+  VPC:
+    Description: VPC to launch virtual server in
+    Type: AWS::EC2::VPC::Id
+  Subnet:
+    Description: subnet to launch virtual server in
+    Type: AWS::EC2::Subnet::Id
+
+Resources:
+  EC2Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        KeyName: !Ref KeyName
+        VPC: !Ref VPC
+        Subnet: !Ref Subnet
+      TemplateURL: https://s3.amazonaws.com/cf-templates-15k7o38t794e2-us-east-1/2018247rhc-firststack.yml
+      TimeoutInMinutes: '5'
+  S3Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/cf-templates-15k7o38t794e2-us-east-1/2018247rhc-firststack.yml
+      TimeoutInMinutes: '2'
+      Parameters:
+        InstanceId: !Sub ${EC2Stack.Outputs.InstanceId}
+
+
+
+

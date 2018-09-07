@@ -1,0 +1,69 @@
+--- 
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This Stack creates following resources - yet to finalize
+
+Parameters:
+  MsKeyName:
+    Description: Name of an existing EC2 KeyPair
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: nv-kp
+    ConstraintDescription: Must be the name of an existing EC2 KeyPair.
+  MsInstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues: [t1.micro, t2.nano, t2.micro, t2.small, t2.medium, t2.large, m1.small]
+    ConstraintDescription: must be a valid EC2 instance type.
+  ImageId:
+    Description: Image ID to launch EC2 instances.
+    Type: AWS::EC2::Image::Id
+    Default: ami-04681a1dbd79675a5
+  
+
+
+Resources:    
+  WebServerGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier: [subnet-a95edd87,subnet-a95edd87,subnet-a95edd87]
+      LaunchConfigurationName: !Ref 'LaunchConfig'
+      MinSize: '1'
+      MaxSize: '3'
+      LoadBalancerNames: !Ref 'ElasticLoadBalancer'
+      
+  LaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: !Ref 'ImageId'
+      VPCId: !Ref 'VPC'
+      SecurityGroupId: 'sg-427bac0e'
+      InstanceType: !Ref 'MsInstance'
+
+  ElasticLoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      AvailabilityZones: Fn::GetAZs 'us-east-1a,us-east-1b,us-east1c'
+      CrossZone: true
+      Listeners:
+      - LoadBalancerPort: '80'
+        InstancePort: '80'
+        Protocol: HTTP
+  VPC:
+    Description: VPC to launch EC2 Instances
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 172.31.0.0/16
+      
+  #Create Instance  
+  MsInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: !Ref 'MsKeyName'
+      ImageId: !Ref 'ImageId'
+      InstanceType: !Ref 'MsInstanceType'
+      NetworkInterfaces:
+      - AssociatePublicIpAddress: true
+        DeleteOnTermination: true
+        Description: ENI for Linux Instance
+        DeviceIndex: '0'
+        

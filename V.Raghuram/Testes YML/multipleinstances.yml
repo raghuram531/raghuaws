@@ -1,0 +1,140 @@
+--- 
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This Stack creates following resources - yet to finalize
+
+Parameters:
+  InstanceCount:
+    Description: Number of EC2 instances (must be between 1 and 3).
+    Type: Number
+    Default: 1
+    MinValue: 1
+    MaxValue: 3
+    ConstraintDescription: Must be a number between 1 and 3
+  MsKeyName:
+    Description: Name of an existing EC2 KeyPair
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: nv-kp
+    ConstraintDescription: Must be the name of an existing EC2 KeyPair.
+  MsInstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues: [t1.micro, t2.nano, t2.micro, t2.small, t2.medium, t2.large, m1.small]
+    ConstraintDescription: must be a valid EC2 instance type.
+  ImageId:
+    Description: Image ID to launch EC2 instances.
+    Type: AWS::EC2::Image::Id
+    Default: ami-04681a1dbd79675a5
+  
+
+Conditions:
+  Launch1: !Equals [1, 1]
+  Launch2: !Not [!Equals [1, !Ref InstanceCount]]
+  Launch3: !Or
+  - !Not [!Equals [1, !Ref InstanceCount]]
+  - !Not [!Equals [2, !Ref InstanceCount]]
+      
+      
+Resources:    
+  # Security Group Group and Rules creation
+  MsSecGrp:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties: 
+      GroupDescription: "Allow HTTP/(s) SSH"
+      SecurityGroupEgress:
+        - 
+          CidrIp: 0.0.0.0/0
+          FromPort: "80"
+          IpProtocol: tcp
+          ToPort: "80"
+      SecurityGroupIngress: 
+        - 
+          CidrIp: 0.0.0.0/0
+          FromPort: "80"
+          IpProtocol: tcp
+          ToPort: "80"
+        - 
+          CidrIp: 0.0.0.0/0
+          FromPort: "22"
+          IpProtocol: tcp
+          ToPort: "22"
+      VpcId: !Ref MsVPC
+        
+  #Creating VPC
+  MsVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.10.0.0/16
+
+  #Creating Subnet
+  MsPublicSubnet:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: us-east-1a
+      CidrBlock: 10.10.1.0/24
+      VpcId: !Ref MsVPC
+  #Associate Route for subnet
+  MsPublicSubnetRouteAss:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"  
+    Properties:
+      RouteTableId: !Ref MsRouteTable
+      SubnetId: !Ref MsPublicSubnet
+
+  #Create internet Gateway
+  MsInternetGateway:
+    Type: AWS::EC2::InternetGateway
+  
+  #Attach VPC and InternetGateway 
+  MsAttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref 'MsVPC'
+      InternetGatewayId: !Ref 'MsInternetGateway'
+  
+  #Create Route Table
+  MsRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref MsVPC      
+
+  #Create Public route with Internetgateway 
+  MsPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: MsAttachGateway
+    Properties:
+      RouteTableId: !Ref 'MsRouteTable'
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref 'MsInternetGateway'
+
+  #Create Instance  
+  MsInstance:
+    Condition: Launch1
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: !Ref 'MsKeyName'
+      ImageId: !Ref 'ImageId'
+      InstanceType: !Ref 'MsInstanceType'
+      NetworkInterfaces:
+      - AssociatePublicIpAddress: true
+        DeleteOnTermination: true
+        Description: ENI for Linux Instance
+        DeviceIndex: '0'
+        SubnetId: !Ref 'MsPublicSubnet'
+        GroupSet:
+        - !Ref 'MsSecGrp'
+  
+  MsInstance2:
+    Condition: Launch2
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: !Ref 'MsKeyName'
+      ImageId: !Ref 'ImageId'
+      InstanceType: !Ref 'MsInstanceType'
+      NetworkInterfaces:
+      - AssociatePublicIpAddress: true
+        DeleteOnTermination: true
+        Description: ENI for Linux Instance
+        DeviceIndex: '0'
+        SubnetId: !Ref 'MsPublicSubnet'
+        GroupSet:
+        - !Ref 'MsSecGrp'

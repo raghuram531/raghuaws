@@ -1,0 +1,9 @@
+sudo yum install wget
+sudo mkdir /home/ec2-user/StreamSets
+cd /home/ec2-user/StreamSets
+sudo wget https://archives.streamsets.com/datacollector/2.4.1.0/rpm/streamsets-datacollector-2.4.1.0-all-rpms.tgz
+sudo tar -xzf /home/ec2-user/StreamSets/streamsets-datacollector-2.4.1.0-all-rpms.tgz
+sudo yum localinstall /home/ec2-user/StreamSets/streamsets-datacollector-2.4.1.0-all-rpms/streamsets*
+sudo service sdc start
+cd /etc/security
+sudo cp limits.conf orig_limits.conf
