@@ -1,0 +1,6 @@
+#!/bin/bash
+for i in '54.91.192.30'
+echo $i
+do
+ssh -i "nv.kp.pem" ec2-user@54.91.192.30 "hostname;sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm;sudo yum-config-manager --enable epel;sudo yum update -y;sudo mkdir /home/ec2-user/StreamSets;cd /home/ec2-user/StreamSets;sudo wget https://archives.streamsets.com/datacollector/2.4.1.0/rpm/streamsets-datacollector-2.4.1.0-all-rpms.tgz;sudo chmod 777 streamsets-datacollector-2.4.1.0-all-rpms.tgz;sudo tar -xzf /home/ec2-user/StreamSets/streamsets-datacollector-2.4.1.0-all-rpms.tgz;cd streamsets-datacollector-2.4.1.0-all-rpms;sudo yum localinstall -y streamsets*;cd /etc/security;sudo chmod 777 limits.conf;sudo cp limits.conf orig_limits.conf;sudo echo "*	hard	nofile	33000" > limits.conf;sudo echo "*	soft	nofile	33000" > limits.conf;sudo systemctl daemon-reload;sudo service sdc start;sudo ssh -N -p 22 ec2-user@10.10.1.195/24 -i /nv.kp.pem -L 18630:localhost:18630"
+done
